@@ -1,41 +1,50 @@
 # prefect.yaml
 name: tutor-whatsapp
-prefect-version: 3.0.0
+prefect-version: 3.6.28
 
-# Define o pool de recursos que vai executar essas tarefas
-build: null
-push: null
 pull:
-- prefect.deployments.steps.set_working_directory:
-    directory: C:\Projetos-Python\tutor_whatsapp
+  - prefect.deployments.steps.git_clone:
+      repository: https://github.com/lipehenriqueribeiro2-debug/tutor-whatsapp.git
+      branch: main
+
+install:
+  - prefect.deployments.steps.pip_install_requirements:
+      directory: "{{ build_working_directory }}"
+      requirements_file: requirements.txt
 
 deployments:
   - name: deploy-relatorio-domingo
-    description: "Gera relatorio analitico semanal via Claude"
+    version: "1.0"
+    tags: ["whatsapp", "tutor", "serverless", "bi"]
+    description: "Gera e envia o planejamento estratégico da semana."
     entrypoint: rotinas_background.py:fluxo_relatorio_semanal
     work_pool:
-      name: worker-tutor
+      name: tutor-managed
+      work_queue_name: default
     schedules:
-      - cron: "0 18 * * 0"
-        timezone: "America/Sao_Paulo"
+      - cron: "0 9 * * 0" # Todo domingo às 09:00
+        timezone: "America/Bahia"
 
-  - name: deploy-monitor-apis
-    description: "Monitora os limites de uso e infraestrutura"
+  - name: deploy-monitor-infra
+    version: "1.0"
+    tags: ["whatsapp", "devops", "serverless"]
+    description: "Verifica o saldo do OpenRouter e alerta se estiver baixo."
     entrypoint: rotinas_background.py:fluxo_monitoramento_infra
     work_pool:
-      name: worker-tutor
+      name: tutor-managed
+      work_queue_name: default
     schedules:
-      - cron: "0 */6 * * *"
-        timezone: "America/Sao_Paulo"
+      - cron: "0 8 * * *" # Todos os dias às 08:00
+        timezone: "America/Bahia"
 
-  - name: agendamento-estudo-diario
+  - name: deploy-lembrete-estudo
     version: "1.0"
-    tags: ["estudos", "engenharia"]
-    description: "Lembrete diário focado nos estudos universitários."
-    entrypoint: "rotinas_background.py:fluxo_estudo_diario"
+    tags: ["whatsapp", "ufba", "serverless"]
+    description: "Dispara o aviso de foco para os estudos e relatórios."
+    entrypoint: rotinas_background.py:fluxo_estudo_diario
     work_pool:
-      name: "worker-tutor"
-      work_queue_name: "default"
+      name: tutor-managed
+      work_queue_name: default
     schedules:
-      - cron: "0 19 * * *" # Padrão: Todos os dias às 19h
-        timezone: "America/Sao_Paulo"
+      - cron: "30 19 * * 1-5" # Segunda a Sexta às 19:30
+        timezone: "America/Bahia"
