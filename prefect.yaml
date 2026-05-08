@@ -7,7 +7,6 @@ pull:
       repository: https://github.com/lipehenriqueribeiro2-debug/tutor-whatsapp.git
       branch: main
 
-install:
   - prefect.deployments.steps.pip_install_requirements:
       directory: "{{ build_working_directory }}"
       requirements_file: requirements.txt
